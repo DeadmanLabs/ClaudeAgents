@@ -1,31 +1,25 @@
 @echo off
 setlocal enabledelayedexpansion
 
-:: Run script for ClaudeAgents (Windows)
+rem Run script for ClaudeAgents (Windows)
 
 echo ClaudeAgents Run Script for Windows
 echo ===================================
 
-:: Check for help flag
-if /i "%~1"=="--help" (
-    call :show_help
-    exit /b 0
-)
-if /i "%~1"=="-h" (
-    call :show_help
-    exit /b 0
-)
+rem Check for help flag
+if /i "%~1"=="--help" goto display_help
+if /i "%~1"=="-h" goto display_help
 
-:: Default configuration
+rem Default configuration
 set LANGUAGE=python
 set VERBOSE=false
 set PERSIST_MEMORY=false
 set PROMPT_FILE=
 set PROMPT=
 
-:: Parse command line arguments
-:parse_loop
-if "%~1"=="" goto :after_parsing
+rem Parse command line arguments
+:parse_args
+if "%~1"=="" goto run_program
 
 if /i "%~1"=="-l" (
     if "%~2"=="" (
@@ -35,8 +29,9 @@ if /i "%~1"=="-l" (
     set LANGUAGE=%~2
     shift
     shift
-    goto :parse_loop
-) else if /i "%~1"=="--language" (
+    goto parse_args
+)
+if /i "%~1"=="--language" (
     if "%~2"=="" (
         echo ERROR: Language option requires a value.
         exit /b 1
@@ -44,24 +39,29 @@ if /i "%~1"=="-l" (
     set LANGUAGE=%~2
     shift
     shift
-    goto :parse_loop
-) else if /i "%~1"=="-v" (
+    goto parse_args
+)
+if /i "%~1"=="-v" (
     set VERBOSE=true
     shift
-    goto :parse_loop
-) else if /i "%~1"=="--verbose" (
+    goto parse_args
+)
+if /i "%~1"=="--verbose" (
     set VERBOSE=true
     shift
-    goto :parse_loop
-) else if /i "%~1"=="-p" (
+    goto parse_args
+)
+if /i "%~1"=="-p" (
     set PERSIST_MEMORY=true
     shift
-    goto :parse_loop
-) else if /i "%~1"=="--persist-memory" (
+    goto parse_args
+)
+if /i "%~1"=="--persist-memory" (
     set PERSIST_MEMORY=true
     shift
-    goto :parse_loop
-) else if /i "%~1"=="-f" (
+    goto parse_args
+)
+if /i "%~1"=="-f" (
     if "%~2"=="" (
         echo ERROR: File option requires a filename.
         exit /b 1
@@ -69,8 +69,9 @@ if /i "%~1"=="-l" (
     set PROMPT_FILE=%~2
     shift
     shift
-    goto :parse_loop
-) else if /i "%~1"=="--file" (
+    goto parse_args
+)
+if /i "%~1"=="--file" (
     if "%~2"=="" (
         echo ERROR: File option requires a filename.
         exit /b 1
@@ -78,68 +79,16 @@ if /i "%~1"=="-l" (
     set PROMPT_FILE=%~2
     shift
     shift
-    goto :parse_loop
-) else (
-    :: If we get here, assume it's the prompt
-    set PROMPT=%~1
-    shift
-    goto :parse_loop
+    goto parse_args
 )
 
-:after_parsing
-echo Language: %LANGUAGE%
-echo Verbose: %VERBOSE%
-echo Persist Memory: %PERSIST_MEMORY%
-echo Prompt File: %PROMPT_FILE%
-echo Prompt: %PROMPT%
+rem If we get here, assume it's the prompt
+set PROMPT=%~1
+shift
+goto parse_args
 
-:: Check for common errors
-if "%PROMPT%"=="f" (
-    echo WARNING: "f" specified as prompt. Did you mean to use -f for file input?
-    echo For file input, use: run.bat -f example_prompt.txt
-    echo.
-    set /p CONTINUE=Continue with "f" as the prompt? (y/n): 
-    if /i "!CONTINUE!" NEQ "y" exit /b 1
-)
-
-:: Validate language choice
-if /i "%LANGUAGE%" NEQ "python" (
-    if /i "%LANGUAGE%" NEQ "javascript" (
-        echo ERROR: Invalid language selection '%LANGUAGE%'. Choose 'python' or 'javascript'.
-        exit /b 1
-    )
-)
-
-:: Check if no prompt provided
-if "%PROMPT_FILE%"=="" (
-    if "%PROMPT%"=="" (
-        echo ERROR: No prompt provided. Use the -f option for a file or provide a prompt as an argument.
-        call :show_help
-        exit /b 1
-    )
-)
-
-:: Check environmental variables
-if "%ANTHROPIC_API_KEY%"=="" (
-    if "%OPENAI_API_KEY%"=="" (
-        echo WARNING: Neither ANTHROPIC_API_KEY nor OPENAI_API_KEY environment variables are set.
-        echo The agents will not be able to make API calls to AI services.
-        set /p CONTINUE=Continue anyway? (y/n): 
-        if /i "!CONTINUE!" NEQ "y" exit /b 1
-    )
-)
-
-:: Run the chosen implementation
-if /i "%LANGUAGE%"=="python" (
-    call :run_python
-) else (
-    call :run_javascript
-)
-
-echo ClaudeAgents run completed.
-exit /b 0
-
-:show_help
+rem Display help information
+:display_help
 echo Usage: run.bat [options] "prompt"
 echo.
 echo Options:
@@ -153,6 +102,51 @@ echo   run.bat "Design a simple todo app"
 echo   run.bat -l javascript -v -p -f example_prompt.txt
 exit /b 0
 
+rem Run the program
+:run_program
+echo Language: %LANGUAGE%
+echo Verbose: %VERBOSE%
+echo Persist Memory: %PERSIST_MEMORY% 
+echo Prompt File: %PROMPT_FILE%
+echo Prompt: %PROMPT%
+
+rem Check for common errors
+if "%PROMPT%"=="f" (
+    echo WARNING: "f" specified as prompt. Did you mean to use -f for file input?
+    echo For file input, use: run.bat -f example_prompt.txt
+    echo.
+    set /p CONTINUE=Continue with "f" as the prompt? (y/n): 
+    if /i "!CONTINUE!" NEQ "y" exit /b 1
+)
+
+rem Validate language choice
+if /i "%LANGUAGE%" NEQ "python" if /i "%LANGUAGE%" NEQ "javascript" (
+    echo ERROR: Invalid language selection '%LANGUAGE%'. Choose 'python' or 'javascript'.
+    exit /b 1
+)
+
+rem Check if no prompt provided
+if "%PROMPT_FILE%"=="" if "%PROMPT%"=="" (
+    echo ERROR: No prompt provided. Use the -f option for a file or provide a prompt as an argument.
+    goto display_help
+)
+
+rem Check environmental variables
+if "%ANTHROPIC_API_KEY%"=="" if "%OPENAI_API_KEY%"=="" (
+    echo WARNING: Neither ANTHROPIC_API_KEY nor OPENAI_API_KEY environment variables are set.
+    echo The agents will not be able to make API calls to AI services.
+    set /p CONTINUE=Continue anyway? (y/n): 
+    if /i "!CONTINUE!" NEQ "y" exit /b 1
+)
+
+rem Run the chosen implementation
+if /i "%LANGUAGE%"=="python" (
+    goto run_python
+) else (
+    goto run_javascript
+)
+
+rem Run the Python implementation
 :run_python
 echo Checking Python environment...
 
@@ -162,7 +156,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-:: Create virtual environment if it doesn't exist
+rem Create virtual environment if it doesn't exist
 if not exist python\venv (
     echo Creating Python virtual environment...
     cd python
@@ -170,7 +164,7 @@ if not exist python\venv (
     cd ..
 )
 
-:: Activate virtual environment and install dependencies
+rem Activate virtual environment and install dependencies
 echo Activating virtual environment and installing dependencies...
 call python\venv\Scripts\activate.bat
 cd python
@@ -178,7 +172,7 @@ pip install -e . --upgrade
 pip install -r requirements.txt --upgrade
 cd ..
 
-:: Prepare command
+rem Prepare command
 set CMD=python python\src\main.py
 
 if "%VERBOSE%"=="true" (
@@ -195,15 +189,16 @@ if not "%PROMPT_FILE%"=="" (
     set CMD=!CMD! "%PROMPT%"
 )
 
-:: Run Python implementation
+rem Run Python implementation
 echo Running Python implementation...
 echo Command: !CMD!
 !CMD!
 
-:: Deactivate virtual environment
+rem Deactivate virtual environment
 call deactivate
-exit /b 0
+goto end
 
+rem Run the JavaScript implementation
 :run_javascript
 echo Checking Node.js environment...
 
@@ -219,16 +214,16 @@ if errorlevel 1 (
     exit /b 1
 )
 
-:: Install dependencies
+rem Install dependencies
 echo Installing dependencies...
 cd javascript
 call npm install
 
-:: Build the project
+rem Build the project
 echo Building project...
 call npm run build
 
-:: Prepare command
+rem Prepare command
 set CMD=node dist\index.js
 
 if "%VERBOSE%"=="true" (
@@ -245,10 +240,14 @@ if not "%PROMPT_FILE%"=="" (
     set CMD=!CMD! "%PROMPT%"
 )
 
-:: Run JavaScript implementation
+rem Run JavaScript implementation
 echo Running JavaScript implementation...
 echo Command: !CMD!
 !CMD!
 
 cd ..
-exit /b 0
+goto end
+
+:end
+echo ClaudeAgents run completed.
+endlocal
