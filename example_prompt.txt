@@ -1,0 +1,12 @@
+Design a simple command-line calculator application that can perform basic arithmetic operations (addition, subtraction, multiplication, division) and some advanced operations (power, square root). The calculator should have a clean interface, handle errors gracefully, and allow users to perform multiple calculations in a session.
+
+Requirements:
+1. Support for basic operations: +, -, *, /
+2. Support for advanced operations: power (^), square root (sqrt)
+3. Command-line interface with clear prompts
+4. Error handling for invalid inputs
+5. Memory feature to store and recall the last result
+6. Option to quit the application
+7. History feature to review previous calculations
+
+Make sure the code is well-documented, follows best practices, and is structured in a maintainable way.

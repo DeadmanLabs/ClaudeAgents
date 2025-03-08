@@ -6,6 +6,22 @@ setlocal enabledelayedexpansion
 echo ClaudeAgents Run Script for Windows
 echo ===================================
 
+:: Check for help flag
+if /i "%~1"=="--help" (
+    echo Usage: run.bat [options] "prompt"
+    echo.
+    echo Options:
+    echo   -l, --language LANG     Language implementation to use (python, javascript)
+    echo   -v, --verbose           Enable verbose logging
+    echo   -p, --persist-memory    Persist agent memory between runs
+    echo   -f, --file FILE         Read prompt from file
+    echo.
+    echo Example:
+    echo   run.bat "Design a simple todo app"
+    echo   run.bat -l javascript -v -p -f prompt.txt
+    exit /b 0
+)
+
 :: Default configuration
 set LANGUAGE=python
 set VERBOSE=false
@@ -104,7 +120,8 @@ if /i "%LANGUAGE%"=="python" (
     echo Activating virtual environment and installing dependencies...
     call python\venv\Scripts\activate.bat
     cd python
-    pip install -e .
+    pip install -e . --upgrade
+    pip install -r requirements.txt --upgrade
     cd ..
     
     :: Prepare command

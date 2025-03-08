@@ -18,6 +18,22 @@ fi
 echo "ClaudeAgents Run Script for $OS_TYPE"
 echo "===================================="
 
+# Check for help flag
+if [[ "$1" == "--help" ]]; then
+    echo "Usage: ./run.sh [options] \"prompt\""
+    echo
+    echo "Options:"
+    echo "  -l, --language LANG     Language implementation to use (python, javascript)"
+    echo "  -v, --verbose           Enable verbose logging"
+    echo "  -p, --persist-memory    Persist agent memory between runs" 
+    echo "  -f, --file FILE         Read prompt from file"
+    echo
+    echo "Example:"
+    echo "  ./run.sh \"Design a simple todo app\""
+    echo "  ./run.sh -l javascript -v -p -f prompt.txt"
+    exit 0
+fi
+
 # Default configuration
 LANGUAGE="python"  # Options: python, javascript
 VERBOSE=false
@@ -95,7 +111,8 @@ if [[ "$LANGUAGE" == "python" ]]; then
     # Install dependencies
     echo "Installing dependencies..."
     cd python
-    pip install -e .
+    pip install -e . --upgrade
+    pip install -r requirements.txt --upgrade
     cd ..
     
     # Prepare command

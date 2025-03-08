@@ -16,6 +16,10 @@ setup(
         "loguru>=0.7.0",
         "aiohttp>=3.8.0",
         "beautifulsoup4>=4.12.0",
+        "lxml>=4.9.0",  # For better BeautifulSoup HTML parsing
+        "chardet>=5.0.0",  # For character encoding detection
+        "attrs>=22.0.0",  # For dataclasses in older Python versions
+        "asyncio>=3.4.3",  # For async support
     ],
     extras_require={
         "dev": [

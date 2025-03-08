@@ -35,9 +35,39 @@ ClaudeAgents is a dual-implementation framework (Python and JavaScript) that ena
 - Python 3.9+ or Node.js 18+
 - API keys for OpenAI or Anthropic (set as environment variables)
 
-### Quick Start with Run Scripts
+### Quick Start
 
-The simplest way to run the system is using the provided run scripts:
+#### First Time Setup
+
+Before running the system for the first time, use the initialization script to set up the environment:
+
+#### On Linux/macOS
+
+```bash
+# Make the initialization script executable
+chmod +x init.sh
+
+# Run the initialization script
+./init.sh
+```
+
+#### On Windows
+
+```batch
+:: Run the initialization script
+init.bat
+```
+
+The initialization script will:
+1. Check for dependencies (Python, Node.js)
+2. Set up virtual environments
+3. Install all required packages
+4. Create a template .env file for your API keys
+5. Create an example prompt file
+
+#### Running the System
+
+After initialization, you can use the provided run scripts:
 
 #### On Linux/macOS
 
