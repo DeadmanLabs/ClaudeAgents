@@ -10,11 +10,14 @@
     "lint": "eslint 'src/**/*.{js,ts}'",
     "lint:fix": "eslint 'src/**/*.{js,ts}' --fix",
     "typecheck": "tsc --noEmit",
-    "dev": "ts-node src/index.ts"
+    "dev": "ts-node src/index.ts",
+    "start": "node dist/index.js"
   },
   "dependencies": {
     "axios": "^1.6.2",
+    "commander": "^11.1.0",
     "dotenv": "^16.3.1",
+    "jsdom": "^23.0.1",
     "openai": "^4.0.0",
     "anthropic": "^0.8.0",
     "pino": "^8.16.2",
@@ -23,6 +26,7 @@
   },
   "devDependencies": {
     "@types/jest": "^29.5.10",
+    "@types/jsdom": "^21.1.6",
     "@types/node": "^20.10.0",
     "@typescript-eslint/eslint-plugin": "^6.13.1",
     "@typescript-eslint/parser": "^6.13.1",

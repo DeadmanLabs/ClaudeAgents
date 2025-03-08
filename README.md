@@ -14,6 +14,8 @@ ClaudeAgents is a dual-implementation framework (Python and JavaScript) that ena
 - **Comprehensive Logging**: Detailed logging of agent activities
 - **Real-Time Streaming**: Support for streaming outputs
 - **Extensible Design**: Easily add new agent types or capabilities
+- **Web Search Capability**: Search and retrieve information from the web
+- **File Operations**: Comprehensive file handling utilities
 
 ## Agent Types
 
@@ -28,11 +30,61 @@ ClaudeAgents is a dual-implementation framework (Python and JavaScript) that ena
 
 ## Getting Started
 
-### Python Implementation
+### Prerequisites
+
+- Python 3.9+ or Node.js 18+
+- API keys for OpenAI or Anthropic (set as environment variables)
+
+### Quick Start with Run Scripts
+
+The simplest way to run the system is using the provided run scripts:
+
+#### On Linux/macOS
+
+```bash
+# Make the script executable
+chmod +x run.sh
+
+# Run with Python implementation (default)
+./run.sh "Your prompt here"
+
+# Run with JavaScript implementation
+./run.sh -l javascript "Your prompt here"
+
+# Run with a prompt from a file
+./run.sh -f your_prompt.txt
+
+# Enable verbose logging and persist memory
+./run.sh -v -p "Your prompt here"
+```
+
+#### On Windows
+
+```batch
+:: Run with Python implementation (default)
+run.bat "Your prompt here"
+
+:: Run with JavaScript implementation
+run.bat -l javascript "Your prompt here"
+
+:: Run with a prompt from a file
+run.bat -f your_prompt.txt
+
+:: Enable verbose logging and persist memory
+run.bat -v -p "Your prompt here"
+```
+
+### Manual Setup and Running
+
+#### Python Implementation
 
 ```bash
 # Navigate to the Python implementation
 cd python
+
+# Create a virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -e .
@@ -47,7 +99,7 @@ python src/main.py --prompt-file your_prompt.txt
 python src/main.py --log-level DEBUG --log-to-file "Your prompt here"
 ```
 
-### JavaScript Implementation
+#### JavaScript Implementation
 
 ```bash
 # Navigate to the JavaScript implementation
@@ -69,6 +121,16 @@ npm start --prompt-file your_prompt.txt
 npm start --log-level debug --log-to-file "Your prompt here"
 ```
 
+## Environment Variables
+
+Create a `.env` file in the project root or set these environment variables:
+
+```
+# Required for AI capabilities - at least one of these must be set
+ANTHROPIC_API_KEY=your_anthropic_api_key
+OPENAI_API_KEY=your_openai_api_key
+```
+
 ## Project Structure
 
 ```
@@ -79,7 +141,8 @@ ClaudeAgents/
 │   │   ├── utils/               # Utility functions
 │   │   └── main.py              # Entry point
 │   ├── tests/                   # Test suite
-│   └── pyproject.toml           # Project configuration
+│   ├── pyproject.toml           # Project configuration
+│   └── requirements.txt         # Dependencies list
 ├── javascript/                  # JavaScript implementation
 │   ├── src/
 │   │   ├── agents/              # Agent implementations
@@ -87,6 +150,8 @@ ClaudeAgents/
 │   │   └── index.ts             # Entry point
 │   ├── tests/                   # Test suite
 │   └── package.json             # Project configuration
+├── run.sh                       # Run script for Linux/macOS
+├── run.bat                      # Run script for Windows
 └── README.md                    # This file
 ```
 
