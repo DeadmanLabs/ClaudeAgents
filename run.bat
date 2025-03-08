@@ -7,7 +7,11 @@ echo ClaudeAgents Run Script for Windows
 echo ===================================
 
 :: Check for help flag
-if /i "%~1"=="--help" (
+if /i "%~1"=="--help" goto :show_help
+if /i "%~1"=="-h" goto :show_help
+goto :continue_execution
+
+:show_help
     echo Usage: run.bat [options] "prompt"
     echo.
     echo Options:
@@ -20,7 +24,8 @@ if /i "%~1"=="--help" (
     echo   run.bat "Design a simple todo app"
     echo   run.bat -l javascript -v -p -f prompt.txt
     exit /b 0
-)
+
+:continue_execution
 
 :: Default configuration
 set LANGUAGE=python
@@ -30,59 +35,75 @@ set PROMPT_FILE=
 set PROMPT=
 
 :: Parse command line arguments
-set ARGS_REMAINING=true
-set ARGS_COUNT=0
-
 :parse_args
 if "%~1"=="" goto end_parse_args
-
-set /a ARGS_COUNT+=1
 
 if /i "%~1"=="-l" (
     set LANGUAGE=%~2
     shift
-    goto next_arg
+    shift
+    goto parse_args
 )
 if /i "%~1"=="--language" (
     set LANGUAGE=%~2
     shift
-    goto next_arg
+    shift
+    goto parse_args
 )
 if /i "%~1"=="-v" (
     set VERBOSE=true
-    goto next_arg
+    shift
+    goto parse_args
 )
 if /i "%~1"=="--verbose" (
     set VERBOSE=true
-    goto next_arg
+    shift
+    goto parse_args
 )
 if /i "%~1"=="-p" (
     set PERSIST_MEMORY=true
-    goto next_arg
+    shift
+    goto parse_args
 )
 if /i "%~1"=="--persist-memory" (
     set PERSIST_MEMORY=true
-    goto next_arg
+    shift
+    goto parse_args
 )
 if /i "%~1"=="-f" (
     set PROMPT_FILE=%~2
     shift
-    goto next_arg
+    shift
+    goto parse_args
 )
 if /i "%~1"=="--file" (
     set PROMPT_FILE=%~2
     shift
-    goto next_arg
+    shift
+    goto parse_args
 )
 
 :: If we get here, assume it's the prompt
 set PROMPT=%~1
-
-:next_arg
 shift
 goto parse_args
 
 :end_parse_args
+
+echo Language: %LANGUAGE%
+echo Verbose: %VERBOSE%
+echo Persist Memory: %PERSIST_MEMORY%
+echo Prompt File: %PROMPT_FILE%
+echo Prompt: %PROMPT%
+
+:: If the first parameter after options is "f", it's likely meant to be "-f" that got separated
+if not "%PROMPT_FILE%"=="" if "%PROMPT%"=="f" (
+    echo Note: Detected "f" as prompt and file parameter already set. This is likely an error.
+    echo For file input, use: run.bat -f your_file.txt
+) else if "%PROMPT%"=="f" (
+    echo Note: Detected "f" as the prompt. Did you mean to use "-f" for file input?
+    echo For file input, use: run.bat -f your_file.txt
+)
 
 :: Validate language choice
 if /i "%LANGUAGE%" NEQ "python" if /i "%LANGUAGE%" NEQ "javascript" (
