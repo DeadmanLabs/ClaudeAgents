@@ -35,6 +35,27 @@ ClaudeAgents is a dual-implementation framework (Python and JavaScript) that ena
 - Python 3.9+ or Node.js 18+
 - API keys for OpenAI or Anthropic (set as environment variables)
 
+### Examples
+
+The repository includes example usage scripts for both Python and JavaScript:
+
+```bash
+# Python example
+python python/examples/example_agent_invocation.py
+
+# JavaScript example
+node javascript/examples/example-agent-invocation.js
+```
+
+These examples demonstrate a complete workflow using all agents to create a weather dashboard application, including:
+- Designing the system architecture
+- Setting up the technology stack
+- Researching optimal libraries
+- Planning the software structure
+- Implementing the code
+- Handling debugging and testing
+- Managing dependencies
+
 ### Quick Start
 
 #### First Time Setup

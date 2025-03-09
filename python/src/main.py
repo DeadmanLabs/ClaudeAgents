@@ -8,7 +8,11 @@ from typing import Optional
 
 from utils.logging_setup import setup_logging, get_log_file_path
 from utils.memory_manager import MemoryManager
+from utils.env_loader import load_env_file, get_env
 from agents.manager_agent import ManagerAgent
+
+# Load environment variables from .env file
+load_env_file()
 
 
 async def main(prompt: str, log_level: str = "INFO",

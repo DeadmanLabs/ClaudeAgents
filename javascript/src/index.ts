@@ -3,7 +3,11 @@ import { program } from 'commander';
 import fs from 'fs';
 import { setupLogger } from './utils/LoggerSetup';
 import { MemoryManager } from './utils/MemoryManager';
+import { loadEnvFile, getEnv } from './utils/EnvLoader';
 import { ManagerAgent } from './agents/ManagerAgent';
+
+// Load environment variables from .env file
+loadEnvFile();
 
 // Define the CLI program
 program
