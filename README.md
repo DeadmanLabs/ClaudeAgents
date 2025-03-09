@@ -201,10 +201,46 @@ ClaudeAgents/
 │   │   └── index.ts             # Entry point
 │   ├── tests/                   # Test suite
 │   └── package.json             # Project configuration
+├── dashboard/                   # Web dashboard frontend
+├── dashboard-api/               # Dashboard backend server
 ├── run.sh                       # Run script for Linux/macOS
 ├── run.bat                      # Run script for Windows
+├── run-dashboard.sh             # Dashboard startup script for Linux/macOS
+├── run-dashboard.bat            # Dashboard startup script for Windows
 └── README.md                    # This file
 ```
+
+## Dashboard
+
+ClaudeAgents now includes a dashboard to monitor and manage agent activity. The dashboard provides:
+
+1. A visual graph of the agent relationships
+2. Real-time code file viewing
+3. Agent logs monitor
+4. Language selection (Python or JavaScript)
+
+### Running the Dashboard
+
+The dashboard runs in Docker to ensure compatibility across systems:
+
+#### On Linux/macOS
+
+```bash
+# Make the dashboard script executable
+chmod +x run-dashboard.sh
+
+# Run the dashboard
+./run-dashboard.sh
+```
+
+#### On Windows
+
+```batch
+:: Run the dashboard
+run-dashboard.bat
+```
+
+The dashboard will be available at: http://localhost:5173
 
 ## License
 

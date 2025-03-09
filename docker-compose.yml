@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./dashboard:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_URL=http://backend:3000
+
+  backend:
+    build:
+      context: ./dashboard-api
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./dashboard-api:/app
+      - /app/node_modules
+      - ./python:/app/python
+      - ./javascript:/app/javascript
+    environment:
+      - NODE_ENV=development
