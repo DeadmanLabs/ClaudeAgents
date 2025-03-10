@@ -5,6 +5,7 @@ import asyncio
 from loguru import logger
 import anthropic
 import openai
+from .env_loader import get_env
 
 
 class AIClient:
@@ -14,22 +15,31 @@ class AIClient:
     AI service providers, with support for streaming responses.
     """
     
-    def __init__(self, provider: str = "anthropic"):
+    def __init__(self, provider: str = None):
         """Initialize the AI client.
         
         Args:
             provider: The AI provider to use ('anthropic' or 'openai')
+                     If None, uses the DEFAULT_PROVIDER from environment variables
         """
+        # Get provider from environment if not specified
+        if provider is None:
+            provider = get_env("DEFAULT_PROVIDER", "anthropic")
+            
         self.provider = provider.lower()
+        
+        # Get model names from environment variables
+        self.anthropic_model = get_env("ANTHROPIC_MODEL", "claude-3-haiku-20240307")
+        self.openai_model = get_env("OPENAI_MODEL", "gpt-3.5-turbo")
         
         # Initialize appropriate client based on provider
         if self.provider == "anthropic":
-            api_key = os.environ.get("ANTHROPIC_API_KEY")
+            api_key = get_env("ANTHROPIC_API_KEY")
             if not api_key:
                 logger.warning("ANTHROPIC_API_KEY not found in environment variables")
             self.client = anthropic.AsyncAnthropic(api_key=api_key)
         elif self.provider == "openai":
-            api_key = os.environ.get("OPENAI_API_KEY")
+            api_key = get_env("OPENAI_API_KEY")
             if not api_key:
                 logger.warning("OPENAI_API_KEY not found in environment variables")
             self.client = openai.AsyncOpenAI(api_key=api_key)
@@ -37,13 +47,14 @@ class AIClient:
             raise ValueError(f"Unsupported AI provider: {provider}")
         
         logger.info(f"Initialized AI client with provider: {self.provider}")
+        logger.debug(f"Using models - Anthropic: {self.anthropic_model}, OpenAI: {self.openai_model}")
     
     async def generate(self, 
                      prompt: str, 
                      system_prompt: Optional[str] = None,
                      messages: Optional[List[Dict[str, str]]] = None,
                      temperature: float = 0.7,
-                     max_tokens: int = 1000,
+                     max_tokens: int = 8000,
                      stream: bool = False) -> Union[str, AsyncGenerator[str, None]]:
         """Generate a response from the AI model.
         
@@ -105,7 +116,7 @@ class AIClient:
                 # Streaming response
                 with logger.contextualize(stream=True):
                     response = await self.client.messages.create(
-                        model="claude-3-haiku-20240307",
+                        model=self.anthropic_model,
                         max_tokens=max_tokens,
                         temperature=temperature,
                         system=system_prompt,
@@ -122,7 +133,7 @@ class AIClient:
             else:
                 # Non-streaming response
                 response = await self.client.messages.create(
-                    model="claude-3-haiku-20240307",
+                    model=self.anthropic_model,
                     max_tokens=max_tokens,
                     temperature=temperature,
                     system=system_prompt,
@@ -177,7 +188,7 @@ class AIClient:
                 # Streaming response
                 with logger.contextualize(stream=True):
                     response = await self.client.chat.completions.create(
-                        model="gpt-3.5-turbo",
+                        model=self.openai_model,
                         max_tokens=max_tokens,
                         temperature=temperature,
                         messages=formatted_messages,
@@ -193,7 +204,7 @@ class AIClient:
             else:
                 # Non-streaming response
                 response = await self.client.chat.completions.create(
-                    model="gpt-3.5-turbo",
+                    model=self.openai_model,
                     max_tokens=max_tokens,
                     temperature=temperature,
                     messages=formatted_messages

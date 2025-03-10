@@ -15,9 +15,9 @@ from agents.manager_agent import ManagerAgent
 load_env_file()
 
 
-async def main(prompt: str, log_level: str = "INFO",
+async def main(prompt: str, log_level: str = "INFO", 
                persist_memory: bool = False, memory_dir: str = "./memory",
-               log_to_file: bool = False) -> None:
+               log_to_file: bool = False, dashboard_mode: bool = False) -> None:
     """Main entry point for the application.
     
     Args:
@@ -26,6 +26,7 @@ async def main(prompt: str, log_level: str = "INFO",
         persist_memory: Whether to persist memory to disk
         memory_dir: Directory for persistent memory storage
         log_to_file: Whether to log to a file
+        dashboard_mode: Whether to run in dashboard mode
     """
     # Set up logging
     log_file = get_log_file_path() if log_to_file else None
@@ -40,8 +41,12 @@ async def main(prompt: str, log_level: str = "INFO",
     memory_manager = MemoryManager(persist_to_disk=persist_memory, storage_dir=memory_dir)
     
     try:
-        # Initialize the manager agent
-        manager = ManagerAgent(name="Manager", memory_manager=memory_manager)
+        # Initialize the manager agent with dashboard mode if specified
+        manager = ManagerAgent(
+            name="Manager", 
+            memory_manager=memory_manager,
+            dashboard_mode=dashboard_mode
+        )
         
         # Execute the manager agent with the prompt
         logger.info(f"Starting execution with prompt: {prompt[:100]}...")
@@ -73,6 +78,8 @@ if __name__ == "__main__":
                        help="Directory for persistent memory storage")
     parser.add_argument("--log-to-file", "-o", action="store_true",
                         help="Log to file")
+    parser.add_argument("--dashboard-mode", action="store_true",
+                        help="Run in dashboard mode with UI updates")
     
     args = parser.parse_args()
     
@@ -96,5 +103,6 @@ if __name__ == "__main__":
         log_level=args.log_level,
         persist_memory=args.persist_memory,
         memory_dir=args.memory_dir,
-        log_to_file=args.log_to_file
+        log_to_file=args.log_to_file,
+        dashboard_mode=args.dashboard_mode
     ))

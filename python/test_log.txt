@@ -1,0 +1,3 @@
+Starting test...
+Error: No module named 'loguru'
+Test failed!

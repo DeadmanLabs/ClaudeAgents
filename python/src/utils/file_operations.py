@@ -1,8 +1,9 @@
 import os
 import json
 import shutil
+import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Tuple
 from loguru import logger
 
 
@@ -14,15 +15,18 @@ class FileOperations:
     """
     
     @staticmethod
-    def read_file(file_path: Union[str, Path], encoding: str = "utf-8") -> str:
+    def read_file(file_path: Union[str, Path], encoding: str = "utf-8", diff_pattern: Optional[str] = None) -> Union[str, Tuple[str, bool]]:
         """Read a file and return its contents.
         
         Args:
             file_path: Path to the file to read
             encoding: File encoding
+            diff_pattern: Optional git diff pattern to extract a specific section
+                          Format: "<<<<<<< SEARCH\\n[content]\\n=======\\n[content]\\n>>>>>>> REPLACE"
             
         Returns:
-            The file contents as a string
+            If diff_pattern is None: The file contents as a string
+            If diff_pattern is provided: A tuple of (content, pattern_found)
             
         Raises:
             FileNotFoundError: If the file doesn't exist
@@ -33,6 +37,26 @@ class FileOperations:
             logger.debug(f"Reading file: {path}")
             with open(path, "r", encoding=encoding) as f:
                 content = f.read()
+            
+            if diff_pattern:
+                # Extract content between SEARCH and ======= in the diff pattern
+                search_pattern = r"<<<<<<< SEARCH\n(.*?)\n======="
+                match = re.search(search_pattern, diff_pattern, re.DOTALL)
+                
+                if not match:
+                    logger.warning(f"Invalid diff pattern format: {diff_pattern}")
+                    return content, False
+                
+                search_content = match.group(1)
+                pattern_found = search_content in content
+                
+                if pattern_found:
+                    logger.debug(f"Found diff pattern in file: {path}")
+                else:
+                    logger.warning(f"Diff pattern not found in file: {path}")
+                
+                return content, pattern_found
+            
             return content
         except FileNotFoundError:
             logger.error(f"File not found: {path}")
@@ -42,13 +66,20 @@ class FileOperations:
             raise
     
     @staticmethod
-    def write_file(file_path: Union[str, Path], content: str, encoding: str = "utf-8") -> None:
+    def write_file(file_path: Union[str, Path], content: str, encoding: str = "utf-8", 
+                  diff_pattern: Optional[str] = None) -> Union[None, bool]:
         """Write content to a file.
         
         Args:
             file_path: Path to the file to write
             content: Content to write to the file
             encoding: File encoding
+            diff_pattern: Optional git diff pattern to replace a specific section
+                          Format: "<<<<<<< SEARCH\\n[content to find]\\n=======\\n[content to replace with]\\n>>>>>>> REPLACE"
+            
+        Returns:
+            If diff_pattern is provided: True if pattern was found and replaced, False otherwise
+            If diff_pattern is None: None
             
         Raises:
             IOError: If there's an error writing the file
@@ -58,9 +89,44 @@ class FileOperations:
             # Create directory if it doesn't exist
             path.parent.mkdir(parents=True, exist_ok=True)
             
-            logger.debug(f"Writing to file: {path}")
-            with open(path, "w", encoding=encoding) as f:
-                f.write(content)
+            if diff_pattern:
+                # Parse the diff pattern
+                search_pattern = r"<<<<<<< SEARCH\n(.*?)\n=======\n(.*?)\n>>>>>>> REPLACE"
+                match = re.search(search_pattern, diff_pattern, re.DOTALL)
+                
+                if not match:
+                    logger.warning(f"Invalid diff pattern format: {diff_pattern}")
+                    return False
+                
+                search_content = match.group(1)
+                replace_content = match.group(2)
+                
+                # Read existing content
+                if path.exists():
+                    with open(path, "r", encoding=encoding) as f:
+                        file_content = f.read()
+                else:
+                    file_content = ""
+                
+                # Check if search content exists in the file
+                if search_content not in file_content:
+                    logger.warning(f"Search content not found in file: {path}")
+                    return False
+                
+                # Replace the content
+                new_content = file_content.replace(search_content, replace_content)
+                
+                logger.debug(f"Writing to file with diff pattern: {path}")
+                with open(path, "w", encoding=encoding) as f:
+                    f.write(new_content)
+                
+                return True
+            else:
+                logger.debug(f"Writing to file: {path}")
+                with open(path, "w", encoding=encoding) as f:
+                    f.write(content)
+                
+                return None
         except IOError as e:
             logger.error(f"Error writing to file {path}: {str(e)}")
             raise
@@ -239,4 +305,31 @@ class FileOperations:
             raise
         except IOError as e:
             logger.error(f"Error listing files in {path}: {str(e)}")
+            raise
+    
+    @staticmethod
+    def list_directories(directory_path: Union[str, Path], pattern: str = "*") -> List[Path]:
+        """List directories in a directory matching a pattern.
+        
+        Args:
+            directory_path: Path to the directory
+            pattern: Glob pattern for matching directories
+            
+        Returns:
+            List of directory paths
+            
+        Raises:
+            FileNotFoundError: If the directory doesn't exist
+            IOError: If there's an error listing directories
+        """
+        try:
+            path = Path(directory_path)
+            logger.debug(f"Listing directories in {path} matching pattern '{pattern}'")
+            # Get all items matching the pattern and filter for directories only
+            return [p for p in path.glob(pattern) if p.is_dir()]
+        except FileNotFoundError:
+            logger.error(f"Directory not found: {path}")
+            raise
+        except IOError as e:
+            logger.error(f"Error listing directories in {path}: {str(e)}")
             raise

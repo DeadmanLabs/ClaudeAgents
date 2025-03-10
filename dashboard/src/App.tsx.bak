@@ -45,28 +45,13 @@ function App() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Use window.location.hostname to ensure we connect to the right host
-    const socketUrl = `http://${window.location.hostname}:3000`;
-    console.log("Connecting to server at:", socketUrl);
-    const newSocket = io(socketUrl, {
-      reconnection: true,
-      reconnectionAttempts: 10,
-      reconnectionDelay: 1000,
-      timeout: 20000
-    });
+    const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:3000');
     
     newSocket.on('connect', () => {
       console.log('Connected to server');
-      setError(null);
-    });
-    
-    newSocket.on('connect_error', (err) => {
-      console.error('Connection error:', err);
-      setError(`Socket connection error: ${err.message}. Make sure the API server is running.`);
     });
     
     newSocket.on('state', (newState: AgentState) => {
-      console.log('Received state update:', newState);
       setState(newState);
     });
     
@@ -82,13 +67,8 @@ function App() {
     });
     
     newSocket.on('error', (errorMessage: string) => {
-      console.error('Server error:', errorMessage);
       setError(errorMessage);
       setTimeout(() => setError(null), 5000);
-    });
-    
-    newSocket.on('disconnect', () => {
-      console.log('Disconnected from server');
     });
     
     setSocket(newSocket);
@@ -99,43 +79,22 @@ function App() {
   }, []);
 
   const handleLanguageChange = (language: string) => {
-    console.log("Language changed to:", language);
     if (socket) {
       socket.emit('changeLanguage', language);
-      // Immediate local update to improve UI responsiveness
-      setState(prev => ({
-        ...prev,
-        currentLanguage: language
-      }));
     }
   };
 
   const handleRunAgent = () => {
     if (socket && prompt.trim() && !state.isRunning) {
-      console.log("Running agent with prompt:", prompt);
       socket.emit('runAgent', prompt);
-      // Provide immediate feedback
-      setState(prev => ({
-        ...prev,
-        isRunning: true,
-        logs: [...prev.logs, {
-          type: 'info',
-          message: `Starting agent with prompt: ${prompt}`,
-          timestamp: new Date().toISOString()
-        }]
-      }));
     } else if (!prompt.trim()) {
       setError('Please enter a prompt');
-      setTimeout(() => setError(null), 5000);
-    } else if (state.isRunning) {
-      setError('Agent is already running, please wait');
       setTimeout(() => setError(null), 5000);
     }
   };
 
   const handleSelectFile = (filePath: string) => {
     if (socket) {
-      console.log("Selecting file:", filePath);
       socket.emit('selectFile', filePath);
     }
   };

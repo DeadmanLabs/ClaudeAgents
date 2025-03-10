@@ -161,6 +161,10 @@ class BaseAgent(ABC):
         # Create prompt template with system message and tools
         system_message = self._get_agent_system_message()
         
+        # Get tool names for the prompt
+        tool_names = [tool.name for tool in self.tools]
+        
+        # Create a prompt that includes the required variables for structured chat agent
         prompt = ChatPromptTemplate.from_messages([
             SystemMessage(content=system_message),
             MessagesPlaceholder(variable_name="chat_history"),
@@ -168,20 +172,64 @@ class BaseAgent(ABC):
             MessagesPlaceholder(variable_name="agent_scratchpad"),
         ])
         
-        # Create the agent
-        agent = ConversationalAgent.from_llm_and_tools(
+        # Add the required variables to the prompt
+        prompt = prompt.partial(
+            tools=self.tools,
+            tool_names=tool_names
+        )
+        
+        # The _get_buffer_string function is no longer available in the current langchain version
+        # We'll handle agent_scratchpad formatting directly
+        
+        # Create the agent using structured chat agent which supports multi-input tools
+        from langchain.agents import create_structured_chat_agent
+        # HumanMessage is already imported at the top of the file
+        from langchain_core.messages import AIMessage
+        
+        # Define a custom get_agent_scratchpad function to convert string to messages
+        def get_agent_scratchpad(agent_scratchpad):
+            if isinstance(agent_scratchpad, str):
+                # Convert string to a list of messages
+                return [AIMessage(content=agent_scratchpad)]
+            return agent_scratchpad
+            
+        # Make sure agent_scratchpad is properly processed
+        prompt = prompt.partial(agent_scratchpad=get_agent_scratchpad)
+        
+        agent = create_structured_chat_agent(
             llm=self.llm,
             tools=self.tools,
             prompt=prompt
         )
         
-        return AgentExecutor.from_agent_and_tools(
+        # Create a custom AgentExecutor that handles agent_scratchpad properly
+        executor = AgentExecutor.from_agent_and_tools(
             agent=agent,
             tools=self.tools,
             memory=self.memory,
             verbose=self.verbose,
             handle_parsing_errors=True
         )
+        
+        # Override the _prepare_intermediate_steps method to handle agent_scratchpad
+        original_prepare = executor._prepare_intermediate_steps
+        
+        def patched_prepare(intermediate_steps):
+            # Convert intermediate steps to messages if needed
+            if intermediate_steps and not isinstance(intermediate_steps[0][1], BaseMessage):
+                # Convert string outputs to AIMessage objects
+                processed_steps = []
+                for action, observation in intermediate_steps:
+                    if isinstance(observation, str):
+                        processed_steps.append((action, AIMessage(content=observation)))
+                    else:
+                        processed_steps.append((action, observation))
+                return original_prepare(processed_steps)
+            return original_prepare(intermediate_steps)
+        
+        executor._prepare_intermediate_steps = patched_prepare
+        
+        return executor
     
     @abstractmethod
     async def execute(self, prompt: str, **kwargs: Any) -> Dict[str, Any]:

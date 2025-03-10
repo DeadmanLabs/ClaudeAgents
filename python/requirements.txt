@@ -18,3 +18,4 @@ langchain-openai>=0.0.5
 langchain-core>=0.1.34
 langchain-community>=0.0.29
 langsmith>=0.1.52
+loguru

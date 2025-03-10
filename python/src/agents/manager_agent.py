@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional, Union, Type, cast
 import asyncio
 import json
+import sys
 from loguru import logger
 
 from langchain_core.tools import BaseTool, tool
@@ -56,7 +57,8 @@ class ManagerAgent(BaseAgent):
         llm: Optional[BaseLanguageModel] = None,
         tools: Optional[List[BaseTool]] = None,
         memory: Optional[BaseMemory] = None,
-        verbose: bool = False
+        verbose: bool = False,
+        dashboard_mode: bool = False
     ):
         """Initialize the Manager Agent with LangChain components.
         
@@ -68,16 +70,17 @@ class ManagerAgent(BaseAgent):
             tools: List of tools the agent can use
             memory: LangChain memory instance for conversation history
             verbose: Whether to output verbose logging
+            dashboard_mode: Whether to run in dashboard mode with UI updates
         """
-        super().__init__(name, memory_manager, config, llm, tools, memory, verbose)
-        self.specialized_agents = {}
-        
-        # Add specialized tools for the manager agent
+        # Create manager tools first
         manager_tools = self._create_manager_tools()
-        self.tools.extend(manager_tools)
         
-        # Re-create the agent executor with the new tools
-        self.agent_executor = self._create_agent_executor()
+        # Initialize with all tools
+        all_tools = (tools or []) + manager_tools
+        
+        super().__init__(name, memory_manager, config, llm, all_tools, memory, verbose)
+        self.specialized_agents = {}
+        self.dashboard_mode = dashboard_mode or ("--dashboard-mode" in sys.argv)
     
     def _get_agent_system_message(self) -> str:
         """Override system message for the manager agent."""
@@ -547,7 +550,11 @@ Work methodically through each step of the software development process, delegat
             logger.error(f"Software planning failed: {result.get('error', 'Unknown error')}")
             raise Exception(f"Software planning failed: {result.get('error', 'Unknown error')}")
             
-        return result.get("plan", {})
+        # Store the plan for use by other agents
+        plan = result.get("plan", {})
+        self.save_to_memory("software_plan_detail", plan)
+            
+        return plan
     
     async def _generate_code(self, software_plan: Dict[str, Any]) -> Dict[str, Any]:
         """Generate code using the SoftwareProgrammerAgent with LangChain.
@@ -576,7 +583,8 @@ Work methodically through each step of the software development process, delegat
             f"Tasks: {', '.join(software_plan.get('tasks', []))}"
         )
         
-        result = await programmer.execute(code_prompt)
+        # Pass the software plan to the programmer agent to ensure it follows the structure
+        result = await programmer.execute(code_prompt, software_plan=software_plan)
         
         if not result.get("success", False):
             logger.error(f"Code generation failed: {result.get('error', 'Unknown error')}")
