@@ -5,7 +5,7 @@ import os
 import re
 from loguru import logger
 
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langchain_core.messages import SystemMessage
 from langchain_core.tools import BaseTool, tool
@@ -320,28 +320,16 @@ Be thorough in your analysis and provide specific details about each dependency.
         logger.info(f"Dependency Analyzer Agent {self.name} executing with prompt: {prompt[:100]}...")
         
         try:
-            # Create a structured agent with tools
-            agent = create_structured_chat_agent(
-                self.llm,
-                self.tools,
-                ChatPromptTemplate.from_messages([
-                    ("system", self._get_agent_system_message()),
-                    ("human", "{input}")
-                ])
-            )
-            
-            # Create the agent executor
-            agent_executor = AgentExecutor(
-                agent=agent,
-                tools=self.tools,
-                verbose=True,
-                handle_parsing_errors=True,
-                max_iterations=10
-            )
-            
             # Execute the agent
             logger.debug("Analyzing dependencies...")
-            result = await agent_executor.ainvoke({"input": prompt})
+            # Create a combined input with the prompt and history
+            combined_input = prompt
+            if self.conversation_history:
+                combined_input += "\n\nPrevious conversation:\n" + "\n".join(self.conversation_history)
+            
+            result = await self.agent_executor.ainvoke({
+                "input": combined_input
+            })
             
             # If successful, try to parse the analysis from the result
             if result:

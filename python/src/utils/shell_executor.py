@@ -181,6 +181,36 @@ class ShellExecutorTool(BaseTool):
         super().__init__()
         self.shell_executor = ShellExecutor()
         
+    def _run(self, command: str, timeout: Optional[int] = None, 
+            cwd: Optional[str] = None,
+            run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
+        """Run the shell command synchronously.
+        
+        Args:
+            command: The command to execute
+            timeout: Optional timeout in seconds
+            cwd: Optional working directory
+            run_manager: Optional callback manager
+            
+        Returns:
+            Command execution results as a string
+        """
+        if run_manager:
+            run_manager.on_text("Executing shell command: " + command)
+            
+        result = self.shell_executor.run(command, timeout, cwd)
+        
+        # Format the result for easier readability by the LLM
+        output = (
+            f"Command: {command}\n"
+            f"Success: {result['success']}\n"
+            f"Return Code: {result['return_code']}\n\n"
+            f"STDOUT:\n{result['stdout']}\n\n"
+            f"STDERR:\n{result['stderr']}\n"
+        )
+        
+        return output
+    
     async def _arun(self, command: str, timeout: Optional[int] = None, 
                    cwd: Optional[str] = None,
                    run_manager: Optional[CallbackManagerForToolRun] = None) -> str:

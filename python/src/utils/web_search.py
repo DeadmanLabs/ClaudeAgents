@@ -332,6 +332,7 @@ class WebSearchTool(BaseTool):
     
     name: str = "web_search"
     description: str = "Search the web for information on a specific topic"
+    web_search: Optional[WebSearch] = None
     
     def __init__(self, web_search: Optional[WebSearch] = None):
         """Initialize the web search tool.
@@ -341,10 +342,29 @@ class WebSearchTool(BaseTool):
         """
         super().__init__()
         self.web_search = web_search or WebSearch()
+    
+    def _run(self, query: str, num_results: int = 3, 
+            run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
+        """Run the web search synchronously.
+        
+        Args:
+            query: The search query
+            num_results: Number of results to fetch (default: 3)
+            run_manager: Optional callback manager
+            
+        Returns:
+            JSON string with search results
+        """
+        # Create an event loop and run the async function
+        loop = asyncio.get_event_loop()
+        results = loop.run_until_complete(self.web_search.search_and_fetch(query, num_results=num_results))
+        
+        # Format results as a JSON string
+        return json.dumps(results, ensure_ascii=False, indent=2)
         
     async def _arun(self, query: str, num_results: int = 3, 
                    run_manager: Optional[CallbackManagerForToolRun] = None) -> str:
-        """Run the web search.
+        """Run the web search asynchronously.
         
         Args:
             query: The search query

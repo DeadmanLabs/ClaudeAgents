@@ -4,7 +4,7 @@ import json
 import re
 from loguru import logger
 
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langchain_core.messages import SystemMessage
 from langchain_core.tools import BaseTool, tool
@@ -361,28 +361,10 @@ Be thorough in your analysis and provide specific details about each library.
                     # Default to Python if no language specified
                     language = "python"
             
-            # Create a structured agent with tools
-            agent = create_structured_chat_agent(
-                self.llm,
-                self.tools,
-                ChatPromptTemplate.from_messages([
-                    ("system", self._get_agent_system_message()),
-                    ("human", "{input}")
-                ])
-            )
-            
-            # Create the agent executor
-            agent_executor = AgentExecutor(
-                agent=agent,
-                tools=self.tools,
-                verbose=True,
-                handle_parsing_errors=True,
-                max_iterations=10
-            )
-            
-            # Execute the agent
+            # Use the agent executor created in the BaseAgent class
+            # This ensures all required variables are properly set
             logger.debug("Researching libraries...")
-            result = await agent_executor.ainvoke({
+            result = await self.agent_executor.ainvoke({
                 "input": f"""
                 Research libraries for the following requirements:
                 

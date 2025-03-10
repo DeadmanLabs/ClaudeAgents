@@ -450,7 +450,10 @@ Work methodically through each step of the software development process, delegat
             f"Original request: {requirements.get('prompt', '')[:300]}"
         )
         
-        result = await designer.execute(arch_prompt)
+        # Convert the requirements dictionary to a string for the design_architecture tool
+        requirements_str = json.dumps(requirements)
+        
+        result = await designer.execute(requirements_str)
         
         if not result.get("success", False):
             logger.error(f"Architecture design failed: {result.get('error', 'Unknown error')}")

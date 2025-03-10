@@ -151,27 +151,15 @@ class SoftwareProgrammerAgent(BaseAgent):
             )
         
         try:
-            # Create a structured agent with tools
-            agent = create_structured_chat_agent(
-                self.llm, 
-                tools, 
-                prompt_template
-            )
-            
-            # Create the agent executor
-            agent_executor = AgentExecutor(
-                agent=agent,
-                tools=tools,
-                verbose=True,
-                handle_parsing_errors=True,
-                max_iterations=15
-            )
-            
             # Execute the agent
             logger.debug("Generating code...")
-            result = await agent_executor.ainvoke({
-                "input": prompt,
-                "history": self.conversation_history
+            # Create a combined input with the prompt and history
+            combined_input = prompt
+            if self.conversation_history:
+                combined_input += "\n\nPrevious conversation:\n" + "\n".join(self.conversation_history)
+            
+            result = await self.agent_executor.ainvoke({
+                "input": combined_input
             })
             
             # Collect code metadata

@@ -6,7 +6,7 @@ import re
 import time
 from loguru import logger
 
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.tools import BaseTool, tool
@@ -392,47 +392,33 @@ Be persistent and methodical in your debugging approach.
             }
         
         try:
-            # Create a structured agent with tools
-            agent = create_structured_chat_agent(
-                self.llm,
-                self.tools,
-                ChatPromptTemplate.from_messages([
-                    ("system", self._get_agent_system_message()),
-                    ("human", "{input}")
-                ])
-            )
-            
-            # Create the agent executor
-            agent_executor = AgentExecutor(
-                agent=agent,
-                tools=self.tools,
-                verbose=True,
-                handle_parsing_errors=True,
-                max_iterations=20  # Allow more iterations for persistent debugging
-            )
-            
             # Prepare the input for the agent
-            agent_input = {
-                "input": f"""
-                Debug the following code:
-                
-                {prompt}
-                
-                Build Command: {build_command}
-                Working Directory: {working_directory}
-                
-                Your task is to:
-                1. Build and run the code to identify any exceptions
-                2. Analyze and fix each exception
-                3. Continue until the code runs successfully without exceptions
-                
-                DO NOT STOP until all exceptions are resolved.
-                """
-            }
+            debug_input = f"""
+            Debug the following code:
+            
+            {prompt}
+            
+            Build Command: {build_command}
+            Working Directory: {working_directory}
+            
+            Your task is to:
+            1. Build and run the code to identify any exceptions
+            2. Analyze and fix each exception
+            3. Continue until the code runs successfully without exceptions
+            
+            DO NOT STOP until all exceptions are resolved.
+            """
+            
+            # Create a combined input with the prompt and history
+            combined_input = debug_input
+            if self.conversation_history:
+                combined_input += "\n\nPrevious conversation:\n" + "\n".join(self.conversation_history)
             
             # Execute the agent
             logger.debug("Starting exception debugging process...")
-            result = await agent_executor.ainvoke(agent_input)
+            result = await self.agent_executor.ainvoke({
+                "input": combined_input
+            })
             
             # If successful, try to parse the debug result from the output
             if result:

@@ -5,7 +5,7 @@ import sys
 from loguru import logger
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import PydanticOutputParser
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 from langchain.tools import BaseTool
 from langchain.tools.file_management import ReadFileTool
 from langchain.agents import AgentExecutor, create_structured_chat_agent
@@ -126,82 +126,16 @@ class SoftwarePlannerAgent(BaseAgent):
         # Define output parser for structured output
         output_parser = PydanticOutputParser(pydantic_object=SoftwareArchitecture)
         
-        # Create a specialized prompt for the software planner
-        system_prompt = """You are a Software Planner Agent.
-        Your task is to architect the code structure including parent-child relationships,
-        function signatures, and module boundaries.
-        
-        Based on the user requirements, create a detailed software architecture plan that includes:
-        1. Modules and their purpose
-        2. Files that need to be created
-        3. Key interfaces/classes with brief descriptions
-        4. Component relationships (parent-child or dependency relationships)
-        
-        IMPORTANT:
-        - Follow clean architecture principles with clear separation of concerns
-        - Create a logical hierarchy of components
-        - Ensure modules are properly organized
-        - Identify reusable components
-        - Define clear interfaces between modules
-        
-        CRITICAL FOR VISUALIZATION:
-        You MUST create a visualization graph with nodes and links:
-        - Each node represents a component (module, class, function, etc.) with:
-          * id: A unique identifier (e.g., "auth_module", "user_service")
-          * name: A display name for the component
-          * type: The type of component (e.g., "module", "class", "function", "interface")
-          * description: A brief description of the component's purpose
-          
-        - Each link represents a relationship between components with:
-          * source: The ID of the source component
-          * target: The ID of the target component
-          * label: Optional description of the relationship (e.g., "imports", "extends", "uses")
-          
-        Example nodes:
-        [
-          {"id": "core_module", "name": "Core Module", "type": "module", "description": "Core functionality"},
-          {"id": "user_service", "name": "UserService", "type": "class", "description": "Handles user operations"}
-        ]
-        
-        Example links:
-        [
-          {"source": "core_module", "target": "user_service", "label": "contains"}
-        ]
-        
-        When your plan is complete, use the emit_graph_updates tool to send the visualization data to the dashboard.
-        
-        Format your final response using the following schema:
-        {format_instructions}
-        """
-        
-        prompt_template = ChatPromptTemplate.from_messages([
-            ("system", system_prompt),
-            MessagesPlaceholder(variable_name="history"),
-            ("user", "{input}"),
-        ]).partial(format_instructions=output_parser.get_format_instructions())
-        
         try:
-            # Create a structured agent with tools
-            agent = create_structured_chat_agent(
-                self.llm, 
-                tools, 
-                prompt_template
-            )
-            
-            # Create the agent executor
-            agent_executor = AgentExecutor(
-                agent=agent,
-                tools=tools,
-                verbose=True,
-                handle_parsing_errors=True,
-                max_iterations=10
-            )
-            
             # Execute the agent
             logger.debug("Planning software architecture...")
-            result = await agent_executor.ainvoke({
-                "input": prompt,
-                "history": self.conversation_history
+            # Create a combined input with the prompt and history
+            combined_input = prompt
+            if self.conversation_history:
+                combined_input += "\n\nPrevious conversation:\n" + "\n".join(self.conversation_history)
+            
+            result = await self.agent_executor.ainvoke({
+                "input": combined_input
             })
             
             # Parse the final output to ensure it matches our schema
